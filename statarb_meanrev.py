@@ -6,7 +6,7 @@ from statsmodels.tsa.stattools import coint
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# -------------------- PARAMETERS --------------------
+# Parameters
 tickers = ['PNC','TFC','FITB','KEY', 'JPM', 'BAC', 'C', 'WFC', 'GS', 'MS', 'USB']
 start = '2020-01-01'
 end = '2025-01-01'
@@ -20,7 +20,7 @@ z_entry_range = [0.8, 1.0, 1.2]
 z_exit_range  = [0.2, 0.25, 0.3]
 transaction_cost = 0.0005
 
-# -------------------- DATA --------------------
+# Data
 df = yf.download(tickers, start=start, end=end)
 
 # Select adjusted close prices
@@ -29,7 +29,7 @@ if 'Adj Close' in df.columns.levels[0]:
 else:
     px = df.xs('Close', axis=1, level=0).dropna(how='any')
 
-# -------------------- FUNCTION TO RUN PAIR TRADING --------------------
+# Function for Pair Trading
 def test_pair(stock1, stock2, px, lookback, z_entry, z_exit):
     s1 = np.log(px[stock1])
     s2 = np.log(px[stock2])
@@ -37,9 +37,9 @@ def test_pair(stock1, stock2, px, lookback, z_entry, z_exit):
     # Engle-Granger cointegration test
     score, pvalue, _ = coint(s1, s2)
     if pvalue > 0.05:
-        return None  # skip non-cointegrated pairs
+        return None
 
-    # Compute spread with fixed beta
+    # Calculate spread with a fixed beta
     beta = np.polyfit(s2, s1, 1)[0]
     spread = s1 - beta * s2
 
@@ -65,7 +65,7 @@ def test_pair(stock1, stock2, px, lookback, z_entry, z_exit):
     port_rets = positions.shift(1) * (rets[stock1] - beta*rets[stock2])
     port_rets -= transaction_cost * positions.diff().abs()
 
-    # Equity & risk metrics
+    # Equity & risk 
     equity = (1 + port_rets.fillna(0)).cumprod()
     rolling_max = equity.cummax()
     drawdown = (equity - rolling_max) / rolling_max
@@ -79,8 +79,6 @@ def test_pair(stock1, stock2, px, lookback, z_entry, z_exit):
     # Sortino ratio
     downside_rets = port_rets[port_rets < 0]
     sortino = ann_ret / (downside_rets.std() * np.sqrt(ann_factor)) if len(downside_rets) > 0 else np.nan
-
-    # CAGR
     cagr = (equity.iloc[-1])**(ann_factor/len(equity)) - 1
 
     return {
@@ -97,7 +95,6 @@ def test_pair(stock1, stock2, px, lookback, z_entry, z_exit):
         'max_drawdown': max_dd
     }
 
-# -------------------- CHECK ALL PAIRS --------------------
 results = []
 for stock1, stock2 in itertools.combinations(tickers, 2):
     res = test_pair(stock1, stock2, px, lookback, z_entry, z_exit)
@@ -105,9 +102,9 @@ for stock1, stock2 in itertools.combinations(tickers, 2):
         results.append(res)
         print(f"Cointegrated pair found: {stock1}-{stock2}, p-value={res['pvalue']:.4f}, Sharpe={res['sharpe']:.2f}")
 
-# -------------------- SPREAD PLOTS FOR TOP N PAIRS --------------------
+# Spread Plots
 results_sorted = sorted(results, key=lambda x: x['sharpe'], reverse=True)
-top_n = 5  # number of pairs to plot
+top_n = 5 
 
 for res in results_sorted[:top_n]:
     plt.figure(figsize=(12,6))
@@ -125,7 +122,7 @@ for res in results_sorted[:top_n]:
     plt.legend()
     plt.show()
 
-# -------------------- PORTFOLIO CONSTRUCTION --------------------
+# Portfolio
 top_pairs = results_sorted[:5]  # top 5 Sharpe pairs
 portfolio_rets = pd.Series(0, index=px.index)
 for res in top_pairs:
@@ -134,7 +131,7 @@ for res in top_pairs:
     portfolio_rets += weight * pair_rets
 portfolio_equity = (1 + portfolio_rets).cumprod()
 
-# -------------------- PLOT EQUITY CURVES --------------------
+# Equity Curves
 plt.figure(figsize=(12,6))
 for res in results_sorted[:top_n]:
     plt.plot(res['equity'], label=f"{res['pair'][0]}-{res['pair'][1]}")
@@ -143,8 +140,8 @@ plt.title('Cointegrated Pair Trading Equity Curves')
 plt.legend()
 plt.show()
 
-# -------------------- HEATMAPS --------------------
-# Correlation heatmap
+#            -HEATMAPS-
+# Correlation Price Heatmap
 plt.figure(figsize=(10,8))
 sns.heatmap(px.corr(), annot=True, fmt=".2f", cmap="coolwarm")
 plt.title('Pairwise Price Correlations')
