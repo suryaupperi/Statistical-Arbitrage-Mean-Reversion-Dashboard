@@ -1,2 +1,2 @@
 # Statistical-Arbitrage-Mean-Reversion-Dashboard
-Created a statistical arbitrage mean-reversion dashboard in python , which takes user input and calculates z-entry, z-exit, spread, sharpe ratio, and rolling means with the purpose being to assist investors in stat arb strategies and help them visualize it.
+Created a statistical arbitrage mean-reversion dashboard in python , which takes regional and national US banks and calculates z-entry, z-exit, spread, sharpe ratio, and rolling means with the purpose being to assist investors in stat arb strategies and help them visualize it. Creating a fictional hedge funds that targets US banks and seeks cointegration and correlation between stocks in order to assist stock investing. 
